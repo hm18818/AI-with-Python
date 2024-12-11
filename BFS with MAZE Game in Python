@@ -1,0 +1,58 @@
+def bfs(graph, start_node, end_node):
+
+    solution = []
+    costs = 0
+
+    frontier = []
+    visited = []
+
+    frontier.append(start_node)
+    visited.append(start_node)
+
+    while frontier:
+
+        selected_node = frontier.pop(0)
+
+        if selected_node == end_node:
+            solution.append(selected_node)
+            break
+        
+        solution.append(selected_node)
+
+        for neighbour in graph[selected_node]:
+            if neighbour not in visited:
+                frontier.append(neighbour)
+                visited.append(neighbour)
+
+        costs += 1
+
+    return solution, costs
+
+-------------------------------------
+-------------------------------------
+state_space = {
+    "A": ["B"],
+    "B": ["C"],
+    "C": ["D", "G"],
+    "D": ["E"],
+    "E": ["F"],
+    "F": [],
+    "G": ["H"],
+    "H": ["K", "I"],
+    "K": ["L"],
+    "L": ["M"],
+    "M": ["N"],
+    "N": [],
+    "I": ["J"],
+    "J": [],
+}
+
+start_state = "A"
+
+goal_state = "N"
+----------------------------
+----------------------------
+solution, costs = bfs(state_space, start_state, goal_state)
+
+print("Solution: {}".format(solution))
+print("Costs: {}".format(costs))
