@@ -1,33 +1,105 @@
-def uniform_cost_search(graph, start, goal):
-    Q = PriorityQueue()  # Priority queue ordered by cost
-    visited = set()      # Set to keep track of visited nodes
-    cost = {}            # Dictionary to store cumulative costs
-    parent = {}          # Dictionary to store parent nodes
+import heapq
+import matplotlib.pyplot as plt
+import networkx as nx
 
-    # Initialize
-    Q.put((0, start))    # (cost, node)
-    cost[start] = 0
-    parent[start] = None
+def uniform_cost_search(graph, start, goal, pos):
+    """
+    Perform Uniform Cost Search on a graph.
+    :param graph: Dictionary representing the graph (adjacency list).
+    :param start: Starting node.
+    :param goal: Goal node.
+    :param pos: Dictionary of node positions for visualization.
+    :return: Path, total cost, and visualization.
+    """
+    # Priority queue to store (cost, node)
+    Q = [(0, start)]
+    visited = set()
+    cost = {start: 0}
+    parent = {start: None}
 
-    while not Q.empty():
-        current_cost, u = Q.get()  # Get the node with the lowest cost
+    # Create a NetworkX graph for visualization
+    G = nx.Graph()
+    for node, neighbors in graph.items():
+        for neighbor, edge_cost in neighbors:
+            G.add_edge(node, neighbor, weight=edge_cost)
+
+    # Plot the initial graph
+    plt.figure(figsize=(10, 6))
+    nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=500, font_size=10)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=nx.get_edge_attributes(G, 'weight'))
+    plt.title("Uniform Cost Search: Initial Graph")
+    plt.show()
+
+    while Q:
+        current_cost, u = heapq.heappop(Q)  # Get the node with the lowest cost
 
         if u == goal:
-            # Reconstruct path
+            # Reconstruct the path
             path = []
             while u is not None:
                 path.append(u)
                 u = parent[u]
-            return path[::-1], current_cost  # Return reversed path and total cost
+            path = path[::-1]
+
+            # Plot the final path
+            plt.figure(figsize=(10, 6))
+            nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=500, font_size=10)
+            nx.draw_networkx_edge_labels(G, pos, edge_labels=nx.get_edge_attributes(G, 'weight'))
+            path_edges = list(zip(path[:-1], path[1:]))
+            nx.draw_networkx_edges(G, pos, edgelist=path_edges, edge_color='r', width=2)
+            nx.draw_networkx_nodes(G, pos, nodelist=path, node_color='r', node_size=700)
+            plt.title(f"Uniform Cost Search: Path Found (Cost = {current_cost})")
+            plt.show()
+
+            return path, current_cost
 
         visited.add(u)
 
-        for v, edge_cost in graph.neighbors(u):
+        for v, edge_cost in graph.get(u, []):
             if v not in visited:
                 new_cost = cost[u] + edge_cost
                 if v not in cost or new_cost < cost[v]:
                     cost[v] = new_cost
                     parent[v] = u
-                    Q.put((new_cost, v))
+                    heapq.heappush(Q, (new_cost, v))
 
-    return None  # No path found
+                    # Visualize the exploration
+                    plt.figure(figsize=(10, 6))
+                    nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=500, font_size=10)
+                    nx.draw_networkx_edge_labels(G, pos, edge_labels=nx.get_edge_attributes(G, 'weight'))
+                    explored_edges = [(u, v)]
+                    nx.draw_networkx_edges(G, pos, edgelist=explored_edges, edge_color='g', width=2)
+                    nx.draw_networkx_nodes(G, pos, nodelist=[u, v], node_color='g', node_size=700)
+                    plt.title(f"Exploring: {u} -> {v} (Cost = {new_cost})")
+                    plt.show()
+
+    return None, float('inf')  # No path found
+
+
+# Example usage
+if __name__ == "__main__":
+    # Define the graph as an adjacency list
+    graph = {
+        'A': [('B', 1), ('C', 4)],
+        'B': [('A', 1), ('C', 2), ('D', 5)],
+        'C': [('A', 4), ('B', 2), ('D', 1)],
+        'D': [('B', 5), ('C', 1)]
+    }
+
+    # Define node positions for visualization
+    pos = {
+        'A': (0, 0),
+        'B': (1, 1),
+        'C': (1, -1),
+        'D': (2, 0)
+    }
+
+    # Perform UCS
+    start = 'A'
+    goal = 'D'
+    path, total_cost = uniform_cost_search(graph, start, goal, pos)
+
+    if path:
+        print(f"Path found: {path} with total cost {total_cost}")
+    else:
+        print("No path found.")
