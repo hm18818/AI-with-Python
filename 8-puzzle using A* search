@@ -1,5 +1,6 @@
 import heapq
 import copy
+import matplotlib.pyplot as plt
 
 # The goal state of the 8-puzzle
 goal_state = [[1, 2, 3],
@@ -51,17 +52,26 @@ def generate_moves(state):
     return moves
 
 # A* search algorithm implementation
-def a_star(initial_state, heuristic):
+def a_star(initial_state, heuristic, heuristic_name):
     frontier = []
     heapq.heappush(frontier, (0, initial_state, []))  # (priority, state, path)
     explored = set()
     explored.add(tuple(map(tuple, initial_state)))
+
+    nodes_explored = 0
+    depths = []
+    nodes_explored_list = []
     
     while frontier:
         priority, current_state, path = heapq.heappop(frontier)
+        nodes_explored += 1
+
+        # Track intermediate output after every 10 nodes explored
+        if nodes_explored % 10 == 0:
+            print(f"{heuristic_name}: Nodes Explored: {nodes_explored}, Depth: {len(path)}")
         
         if current_state == goal_state:
-            return path, len(explored)
+            return path, nodes_explored, depths, nodes_explored_list
         
         for next_state in generate_moves(current_state):
             if tuple(map(tuple, next_state)) not in explored:
@@ -71,14 +81,41 @@ def a_star(initial_state, heuristic):
                 h = heuristic(next_state)
                 f = g + h
                 heapq.heappush(frontier, (f, next_state, new_path))
+
+                # Collecting depth and nodes explored for plotting
+                depths.append(len(new_path))
+                nodes_explored_list.append(nodes_explored)
     
-    return None, len(explored)
+    return None, nodes_explored, depths, nodes_explored_list
 
 # Helper function to print a puzzle state
 def print_puzzle(state):
     for row in state:
         print(row)
     print()
+
+# Function to plot performance
+def plot_performance(depths_h1, nodes_explored_h1, depths_h2, nodes_explored_h2):
+    plt.figure(figsize=(12, 6))
+    
+    # Plot for H1
+    plt.subplot(1, 2, 1)
+    plt.plot(nodes_explored_h1, depths_h1, label='H1: Misplaced Tiles', color='blue', marker='o')
+    plt.xlabel('Nodes Explored')
+    plt.ylabel('Solution Depth')
+    plt.title('Performance of H1 (Misplaced Tiles)')
+    plt.grid(True)
+    
+    # Plot for H2
+    plt.subplot(1, 2, 2)
+    plt.plot(nodes_explored_h2, depths_h2, label='H2: Manhattan Distance', color='green', marker='o')
+    plt.xlabel('Nodes Explored')
+    plt.ylabel('Solution Depth')
+    plt.title('Performance of H2 (Manhattan Distance)')
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
 
 # Main code to test A* with H1 and H2
 initial_state = [[1, 2, 3],
@@ -90,9 +127,9 @@ print_puzzle(initial_state)
 
 # A* with H1 (Misplaced Tiles)
 print("Solving with H1 (Misplaced Tiles):")
-solution_h1, nodes_explored_h1 = a_star(initial_state, h1_misplaced_tiles)
-print(f"Nodes Explored: {nodes_explored_h1}")
-print(f"Solution Depth: {len(solution_h1)}")
+solution_h1, nodes_explored_h1, depths_h1, nodes_explored_list_h1 = a_star(initial_state, h1_misplaced_tiles, "H1")
+print(f"H1 - Total Nodes Explored: {nodes_explored_h1}")
+print(f"H1 - Solution Depth: {len(solution_h1)}")
 
 print("Solution Path for H1:")
 for step in solution_h1:
@@ -100,10 +137,13 @@ for step in solution_h1:
 
 # A* with H2 (Manhattan Distance)
 print("Solving with H2 (Manhattan Distance):")
-solution_h2, nodes_explored_h2 = a_star(initial_state, h2_manhattan_distance)
-print(f"Nodes Explored: {nodes_explored_h2}")
-print(f"Solution Depth: {len(solution_h2)}")
+solution_h2, nodes_explored_h2, depths_h2, nodes_explored_list_h2 = a_star(initial_state, h2_manhattan_distance, "H2")
+print(f"H2 - Total Nodes Explored: {nodes_explored_h2}")
+print(f"H2 - Solution Depth: {len(solution_h2)}")
 
 print("Solution Path for H2:")
 for step in solution_h2:
     print_puzzle(step)
+
+# Plot performance comparison
+plot_performance(depths_h1, nodes_explored_list_h1, depths_h2, nodes_explored_list_h2)
